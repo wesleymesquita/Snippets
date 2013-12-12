@@ -3,7 +3,7 @@
 *
 */
 
-#include "TemplatedPermutations.h"
+#include "PermutationGenerator.hpp"
 
 /*! \fn int perm_str(std::string& str, int ini)  
 * \brief prints in stdout all permutations of a given string

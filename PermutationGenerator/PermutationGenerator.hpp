@@ -1,4 +1,4 @@
-/** \file TemplatedPermutation.h
+/** \file PermutationGenerator.h
 *
 * \details This file contains some facilities to calculate
 *		   all permutations of given set of elements
@@ -67,16 +67,16 @@ private:
 	*		  the element position. When you see 'tracked', this is the reason:
 	*		  keep a list of integers is (genaraly) cheaper than keep objects
 	*/
-	template<typename T>
+	template<typename OBJ>
 	class elem_pos{
 	public:
-		elem_pos(int _pos, std::shared_ptr<T> t) :
+		elem_pos(int _pos, std::shared_ptr<OBJ> t) :
 			pos(_pos),
-			T_ptr(t)
+			OBJ_ptr(t)
 		{};
 
 		int pos;
-		std::shared_ptr<T> T_ptr;
+		std::shared_ptr<OBJ> OBJ_ptr;
 	};
 
 	/** \function std::vector<int> getSequence(const std::vector< elem_pos<T> >& vec)
