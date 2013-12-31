@@ -37,9 +37,43 @@ const std::string& Mail::getFrom() const
 {
    return this->from;
 }
-    
-int main()
+
+#include <iostream>
+using namespace std;
+
+struct A{
+    A(){}
+    A(const A&) {cout<<"A1" << endl;}
+};
+
+struct B: A{
+    B(){}
+    B(const B&){}
+};
+
+struct C: A{
+    C(){}
+    C(const B&rhs):A(rhs){} 
+};
+
+struct D:A{
+    D(){}
+};
+
+int main(){
+    D d;
+    D dcopy(d);
+    C c;
+    C ccopy(c);
+    B b;
+    B bcopy(b);
+ }
+
+
+int _main()
 {
+    
+    
     std::vector<std::string> emails = {"a@b.com", "c@b.com", "d@b.com", "a@h.com"};
     
     // std::all_of
