@@ -15,9 +15,9 @@ public:
     bool operator ==(const Mail& rhs) const;
     const std::string& getFrom() const;
 private:
+    std::string message;
     std::string from;
     std::string to;
-    std::string message;
 };
 
 Mail::Mail(const std::string& message_, const std::string& from_, const std::string& to_): 
@@ -46,12 +46,13 @@ int main()
     std::vector<std::string> emails = {"a@b.com", "c@b.com", "d@b.com", "a@h.com"};
     
     // std::all_of
+    {
     std::string prefix = "b.com";
     bool is_all_same_prefix = std::all_of(emails.begin(), 
             emails.end(), 
             [&](std::string email){return email.find(prefix) != std::string::npos;} );
     std::cout << "all_of " << is_all_same_prefix << std::endl;
-
+    }
     // std::any_of
     std::string prefix2 = "h.com";    
     bool has_at_least_one = std::any_of(emails.begin(), 
@@ -148,21 +149,22 @@ int main()
     std::cout << "Both lists are " << [&](){return equal_lists ? "equal": "not equal";}() << std::endl;
 
     //std::is_permutation
-    std::string str1 = "ABCDE";
-    std::string str2 = "EBCDA";  
-    bool perm = std::is_permutation(str1.begin(), str1.end(), str2.begin());
-    std::cout << str2 << [&](){return perm ? " is a permutation" : " is not a permutation";}() << " of " << str2 << std::endl;
+    {
+        std::string str1 = "ABCDE";
+        std::string str2 = "EBCDA";  
+        bool perm = std::is_permutation(str1.begin(), str1.end(), str2.begin());
+        std::cout << str2 << [&](){return perm ? " is a permutation" : " is not a permutation";}() << " of " << str2 << std::endl;
      
-    str1 = "FABCDE";
-    str2 = "EBFCDA";  
-    perm = std::is_permutation(str1.begin(), str1.end(), str2.begin());
-    std::cout << str2 << [&](){return perm ? " is a permutation" : " is not a permutation";}() << " of " << str2 << std::endl;
+        str1 = "FABCDE";
+        str2 = "EBFCDA";  
+        perm = std::is_permutation(str1.begin(), str1.end(), str2.begin());
+        std::cout << str2 << [&](){return perm ? " is a permutation" : " is not a permutation";}() << " of " << str2 << std::endl;
 
-    str1 = "FABCDEH";
-    str2 = "EBFCDA";  
-    perm = std::is_permutation(str1.begin(), str1.end(), str2.begin());
-    std::cout << str2 << [&](){return perm ? " is a permutation" : " is not a permutation";}() << " of " << str2 << std::endl;
-   
+        str1 = "FABCDEH";
+        str2 = "EBFCDA";  
+        perm = std::is_permutation(str1.begin(), str1.end(), str2.begin());
+        std::cout << str2 << [&](){return perm ? " is a permutation" : " is not a permutation";}() << " of " << str2 << std::endl;
+    }
     //std::search    
     {
         std::string all_text = "The hardest thing in the world to understand is the income tax.";
@@ -197,6 +199,68 @@ int main()
           }
        }
     }
+
+    {
+       //std::copy    
+        const std::string line = "From: \"Bob Example\" <bob@example.org>";
+       size_t pos_ini = line.find("<");
+       size_t pos_end = line.find(">");
+       std::vector<char> extracted_email;
+       if(pos_ini == std::string::npos || pos_end == std::string::npos){
+           std::cerr << "Email address not found " << std::endl;
+       }
+       else{
+           extracted_email.resize(pos_end - pos_ini, '\0');
+           std::copy(line.begin() + pos_ini + 1, line.begin() + pos_end, extracted_email.begin() );                     
+           std::cout << "extracted_email: " 
+                   << std::string(extracted_email.data()) 
+                   << std::endl;
+       }
+    }
+    
+    
+    {
+       //std::copy_n 
+       const std::string line = "bob@example.org";
+       size_t pos_ini = line.find("@");
+       std::vector<char> extracted_user;
+       if( pos_ini == std::string::npos ){
+           std::cerr << "Could not extract user" << std::endl;
+       }
+       else{
+           extracted_user.resize(pos_ini, '\0');
+           std::copy_n(line.begin(), pos_ini, extracted_user.begin() );                     
+           std::cout << "extracted_user: " 
+                   << std::string(extracted_user.data()) 
+                   << std::endl;
+       } 
+    }
+    
+    {
+        //std::copy_if
+    
+        std::vector<Mail> mails_search = {
+            {"message1", "a@b.com", "c@d.com"}, 
+            {"message2", "a@b.com", "e@d.com"},  
+            {"message3", "e@f.com", "a@b.com"},            
+        }; 
+       
+        std::vector<Mail> mails_from_a_at_b_dot_com;
+        mails_from_a_at_b_dot_com.reserve(mails_search.size()); 
+        
+        std::copy_if(mails_search.begin(), mails_search.end(), 
+                std::back_inserter(mails_from_a_at_b_dot_com), 
+                [&](Mail mail){return mail.getFrom().compare("a@b.com") == 0;});        
+        std::cout << "The are " 
+                << mails_from_a_at_b_dot_com.size() 
+                << " emails from a@b.com" 
+                << std::endl;   
+    }
+    
+    {
+       //std::copy_backward
+        
+    }    
 }
     
 
