@@ -18,3 +18,7 @@ Above, a brief description of files. It may help search engines to find them!
 <b><a href="https://github.com/wesleymesquita/Snippets/blob/master/stl_algorithms_snippets.cpp">stl_algorithms_snippets.cpp</b>: Simples uses <algorithms> C++ templates' functions. More examples are always useful!
 
 <b><a href="https://github.com/wesleymesquita/Snippets/tree/master/PermutationGenerator/"> PermutationGenerator </a>  </b>: Templated class to generate permutation of a set of objects (there is an example of std::move semantics use).
+
+<b><a href="https://github.com/wesleymesquita/Snippets/tree/master/EmailValidator"> Email validator </a>  </b>: Validate a email set against valid domains. [C++11]
+
+
