@@ -22,3 +22,5 @@ Above, a brief description of files. It may help search engines to find them!
 <b><a href="https://github.com/wesleymesquita/Snippets/tree/master/EmailValidator"> Email validator </a>  </b>: Validate a email set against valid domains. [C++11]
 
 
+<b><a href="https://github.com/wesleymesquita/Snippets/blob/master/parse_smtp_date.cpp"> parse_smtp_date.cpp  </a>  </b>: Parses date info from SMTP [C++11]
+
