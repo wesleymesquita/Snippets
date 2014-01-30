@@ -26,5 +26,8 @@ Above, a brief description of files. It may help search engines to find them!
 
 <b><a href="https://github.com/wesleymesquita/Snippets/blob/master/use_weak_ptr.cpp"> use_weak_ptr.cpp  </a>  </b>: An example of how std::weak_ptr works [C++11]
 
+<b><a href="https://github.com/wesleymesquita/Snippets/blob/master/.emacs"> .emacs  </a>  </b>: My .emacs file with CEDET 1.1 working 
+
+
 
 
