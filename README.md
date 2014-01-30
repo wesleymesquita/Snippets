@@ -24,3 +24,7 @@ Above, a brief description of files. It may help search engines to find them!
 
 <b><a href="https://github.com/wesleymesquita/Snippets/blob/master/parse_smtp_date.cpp"> parse_smtp_date.cpp  </a>  </b>: Parses date info from SMTP [C++11]
 
+<b><a href="https://github.com/wesleymesquita/Snippets/blob/master/use_weak_ptr.cpp"> use_weak_ptr.cpp  </a>  </b>: An example of how std::weak_ptr works [C++11]
+
+
+
