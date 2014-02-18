@@ -266,14 +266,7 @@ int main()
        std::for_each(vec2.begin(), vec2.end(),  [](int i){std::cout << i << " - ";} );
        std::cout << std::endl;       
     }    
-    {
-      //std::move
-    std::vector<std::string> email_doms = {".com.br", ".com", ".net.br"};	
-    std::vector<std::string> new_email_doms;
-    new_email_doms.reserve(email_doms.size());
-    std::move(email_doms.begin(), email_doms.end(), new_email_doms.begin());
-    
-    }
+
         
     
 }
