@@ -31,19 +31,22 @@ def min_transact(transacts):
     obal = sorted(obal,key=lambda t:t[0])
     balanced = False
     i = 0
-    j = len(obal)
+    j = len(obal)-1
     t = []
+    print(obal)
     while not balanced:
-       if abs(obal[i][0]) == obal[j][0]:
+        if obal[i][0]==0 and obal[j][0]==0:               
+            return 0
+        elif abs(obal[i][0]) == obal[j][0]:
             obal[i][0] = 0 
             obal[j][0] = 0
             t.append((obal[i][1], obal[j][1]))
             j = j-1
             i = i+1
-        elif abs(obal[i][0]) > obal[j][0]:
+        elif  abs(obal[i][0]) > obal[j][0]:
             obal[i][0] = obal[i][0] + obal[j][0]
             obal[j][0] = 0
-            t.append((obal[i][1]),obal[j][1])
+            t.append((obal[i][1],obal[j][1]))
             j = j-1 
         else:
             obal[i][0] = 0
@@ -56,12 +59,12 @@ def min_transact(transacts):
     return len(t)
 
 if __name__ == "__main__":
-    tests = [([('A','B',5), ('B','C',8), ('C','D',9), 
-             ('A','D',10), ('D','B',11), ('C','A',12)],3)]
-    for test,result in tests:
-        if min_transact(test) == result:
-            print("OK Test " + str(test))
+    tests = [([('A','B',5), ('B','C',8), ('C','D',9), ('A','D',10), ('D','B',11), ('C','A',12)],3), ([('A','B',5),('B','C',5),('C','A',5)],0) ]
+    for test, exp_result in tests:
+        result = min_transact(test)
+        if result == exp_result:
+            print("OK Test \n\t" + str(test) + "\n")
         else:
-            print("Error Test " + str(test))  
+            print("Error in Test: \n\t" + str(test) + "\n\t Expected " + str(exp_result) + " but GOT " + str(result) + "\n")  
     
 
