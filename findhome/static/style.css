@@ -1,0 +1,39 @@
+html, body, #container {
+    height : 100%;  
+    background-color : lightyellow;
+}
+
+body > #container {
+    height : auto;
+    min-height : 100%;
+}
+
+
+#header
+{
+    max-height : 10%;
+    max-width: 100%; height : auto;
+    width : auto;
+    position : top;
+    background-color: lightblue;
+}
+#footer 
+{  
+    clear : both;
+    position : relative;
+    z-index : 10;
+    height : 3em;
+    margin-top: -3em; 
+    background-color : lightblue;
+}
+#left_menu
+{
+    max-width : 10%;
+    max-height : 80%;
+    width : auto;
+    height : auto; 
+    float : left;
+    background-color : #E9967A;   
+}
+
+
