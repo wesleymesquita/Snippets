@@ -2,13 +2,7 @@
 See Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, and Clifford Stein. 2009. 
 Introduction to Algorithms, Third Edition (3rd ed.). The MIT Press. Pages 30-38
 """
-def merge_sort(A, beg, end):
-	if  end-beg > 1:
-		mid = beg + (end-beg)//2
-		merge_sort(A, beg, mid)
-		merge_sort(A, mid, end)
-		_merge(A, beg, end)
-	
+
 def _merge(A, beg, end):
 	if end-beg > 1: 
 		mid = beg + (end-beg)//2
@@ -31,3 +25,38 @@ def _merge(A, beg, end):
 				A[k] = R[j]
 				j+=1
 			k+=1
+
+def _merge_deque(A, beg, end):
+	from collections import deque
+	if end-beg > 1:
+		mid = beg + (end-beg)//2
+		L = deque(A[beg:mid])
+		R = deque(A[mid:end])
+		k = 0
+		while len(L) > 0 or len(R) > 0:
+			if len(L) == 0:
+				A[k:] = list(R)
+				R.clear()
+				continue
+			if len(R) == 0:
+				A[k:] = list(L)
+				L.clear()
+				continue
+			if L[0] <= R[0]:
+				A[k] = L.popleft()	
+			else:
+				A[k] = R.popleft()
+			k+=1
+	
+def merge_sort(A, beg, lsize, merge_func=_merge):
+	"""
+	merge sort algorithm implementation
+	A is a list containing the elements
+	beg = index of firt element
+	lsize = size of vector starting from beg
+	"""
+	if  lsize-beg > 1:
+		mid = beg + (lsize-beg)//2
+		merge_sort(A, beg, mid)
+		merge_sort(A, mid, lsize)
+		merge_func(A, beg, lsize)
