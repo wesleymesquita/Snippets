@@ -1,0 +1,1 @@
+cmd_/home/oscreader/osc9e-src/ch3/task_it/task_iterator.ko := ld -r -m elf_i386 -T /usr/src/linux-headers-3.16.0-4-common/scripts/module-common.lds --build-id  -o /home/oscreader/osc9e-src/ch3/task_it/task_iterator.ko /home/oscreader/osc9e-src/ch3/task_it/task_iterator.o /home/oscreader/osc9e-src/ch3/task_it/task_iterator.mod.o
