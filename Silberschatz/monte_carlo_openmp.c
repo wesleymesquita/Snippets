@@ -4,14 +4,8 @@
 #include <math.h> 
 #include <time.h>
 #include <stdlib.h>
-#include <pthread.h>
 #include <unistd.h>
 
-#define NTHREADS 4
-
-// just to serve as seeds to rand
-int primes[] = {111191111, 777767777, 77777677777, 99999199999};
-int iprimes = -1;
 
 struct point {
 	double x, y;
@@ -59,6 +53,7 @@ double points_circle(int npoints)
 	r.max=1.0;
 	
 	points_in_circle=0;				
+	#pragma omp parallel
 	for(i=0; i<npoints; i++){
 		random_point(&p, &r);		
 		points_in_circle += in_circle(&center, 1.0, &p)?1:0;
@@ -66,27 +61,10 @@ double points_circle(int npoints)
 	return points_in_circle;
 }
 
-struct pi_calc{
-	int npoints;
-	int points_in_circle;
-};
-
-void* worker(void *arg)
-{
-	srandom(primes[++iprimes]);
-	int npoints;
-	npoints = ((struct pi_calc*)arg)->npoints;
-	((struct pi_calc*)arg)->points_in_circle= points_circle(npoints);
-	//printf("Thread %08x: Total points %d. In circle: %d\n", pthread_self(), npoints, ((struct pi_calc*)arg)->points_in_circle);
-	return NULL;
-}
 
 int main(int argc, char **argv)
 {
-	pthread_t t[NTHREADS];
-	struct pi_calc args[NTHREADS];
-	pthread_attr_t attr;
-	int i, npoints, in_circle;
+	int npoints, in_circle;
 
 	if(argc != 2){
 		fprintf(stderr, "Use ./monte_carlo [number of points (in MB)]");
@@ -95,22 +73,8 @@ int main(int argc, char **argv)
 	
 	npoints = atoi(argv[1]);			
 	npoints *= 1024*1024;
-		
-	pthread_attr_init(&attr); 
-	for(i=0; i<NTHREADS; i++){
-		args[i].npoints = npoints/NTHREADS;
-		pthread_create(&t[i], &attr, worker, (void*)&args[i]); 			
-	}
 
-	for(i=0; i<NTHREADS; i++){
-		pthread_join(t[i], NULL);
-	}	
-
-	in_circle = 0;		
-	for(i=0; i<NTHREADS; i++){
-		in_circle += args[i].points_in_circle;
-	}
-	
+	in_circle = points_circle(npoints);		
 	printf("pi == %.16lf\n", 4*((double)in_circle/(double)npoints));
 	return 0;
 }
