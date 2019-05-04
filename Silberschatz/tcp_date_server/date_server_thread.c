@@ -10,23 +10,31 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 
-#define ERROR_BUF_SZ 128	
+#define ERROR_BUF_SZ 128
 
-#define ERROR_BUFFER char __error_buffer[ERROR_BUF_SZ];
+#define ERROR_BUFFER() \
+	char __error_buffer[ERROR_BUF_SZ]; \
+	int __error_no;
 
 #define HANDLE_ERROR_AND_RETURN(func, msg) \
 	__ERROR_TO_STDERR(func, msg, __FILE__, __LINE__)
 
 #define __ERROR_TO_STDERR(func, msg, file, line) \
-	strerror_r(errno, __error_buffer, ERROR_BUF_SZ); \
+	__error_no = errno; \
+	strerror_r(__error_no, __error_buffer, ERROR_BUF_SZ); \
 	fprintf(stderr, "Error at function '%s' [%s:%d]. What: %s. Cause:  %s\n", func, file, line, msg, __error_buffer); \
 	return EXIT_FAILURE;
 
-#define LOG(func, msg) \
-	fprintf(stdout, "[%s:%d] (%s) %s\n", __FILE__, __LINE__, func, msg);
+#define LOG(func, format, args...) \
+	fprintf(stdout, "[%s:%d] (%s)", __FILE__, __LINE__, func); \
+	fprintf(stdout, format, args); \
+	fprintf(stdout, "\n");
 
 #define CONN_BACKLOG 1024
 #define DATE_BUF_SZ 26
+
+
+
 
 int date_now(char *date)
 {
@@ -57,8 +65,12 @@ struct client_sockets{
 
 void client_sockets_init(struct client_sockets *client, int size)
 {
+	int i;
+
 	client->sockets = malloc(sizeof(int)*size);	
 	client->threads = malloc(sizeof(pthread_t)*size);	
+	for(i=0; i<size; i++)
+		client->sockets[i]=-1;	
 	client->size = size;
 	pthread_mutex_init(&client->locker, NULL);
 }
@@ -88,7 +100,13 @@ int client_socket_insert(struct client_sockets *client, int sock_num)
 
 void client_socket_clean(struct client_sockets *client, int slot)
 {
+	int err;
 	pthread_mutex_lock(&client->locker);
+	err = shutdown(client->sockets[slot], SHUT_RDWR);
+	if(err == -1){
+		LOG("client_socket_clean", "Could not gracefully shutdown socket %d\n", client->sockets[slot]);
+	}
+	close(client->sockets[slot]);
 	client->sockets[slot]=-1;	
 	client->threads[slot]=-1;
 	pthread_mutex_unlock(&client->locker);
@@ -139,7 +157,7 @@ void* send_date(void *arg)
 **/	
 int start_date_tcp_server(int port)
 {
-	ERROR_BUFFER
+	ERROR_BUFFER()
 
 	int listen_tcp_sock, ret, client_sock, slot;
 	struct sockaddr_in addr, client_addr;	
@@ -156,9 +174,9 @@ int start_date_tcp_server(int port)
 		close(listen_tcp_sock);		
 		HANDLE_ERROR_AND_RETURN("start_date_server", "Could not open socket for listening")
 	}		
-
+	memset(&addr, 0, sizeof(struct sockaddr_in));
 	addr.sin_family = AF_INET;
-	addr.sin_port = htonl(port);
+	addr.sin_port = htons((uint16_t)port);
 	addr.sin_addr.s_addr = INADDR_ANY;
 	ret = bind(listen_tcp_sock, (const struct sockaddr*)&addr, sizeof(struct sockaddr_in));
 	if (ret == -1){
@@ -171,16 +189,18 @@ int start_date_tcp_server(int port)
 		close(listen_tcp_sock);		
 		HANDLE_ERROR_AND_RETURN("start_date_server", "Could not start listening socket")
 	}	
-	LOG("start_date_tcp_server", "Start Listening")
+	LOG("start_date_tcp_server", "Start Listening on port %d", port);
 	for(;;){
+		memset(&client_addr, 0, sizeof(struct sockaddr_in));
 		client_sock = accept(listen_tcp_sock, (struct sockaddr*)&client_addr, &addrlen);
+		LOG("start_date_tcp_server", "Got connection at socket %d", client_sock);
 		if (client_sock == -1){
 			fprintf(stderr, "Error on 'start_date_server': Could not handle incomming connection");
 			continue;
 		}		
 		slot = client_socket_insert(&client_socks, client_sock);
 		if (slot == -1){
-			fprintf(stderr, "Error on 'start_date_server': Number of connection slots exceeded");
+			fprintf(stderr, "Error on 'start_date_server': number of connection slots exceeded");
 			close(client_sock);
 			continue;
 		}	
@@ -197,7 +217,7 @@ int start_date_tcp_server(int port)
 
 int main(int argc, char **argv)
 {
-	ERROR_BUFFER
+	ERROR_BUFFER()
 	int listening_port;
 
 	if(argc != 2){
