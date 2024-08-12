@@ -20,7 +20,7 @@ bool Grammar::parse(const std::vector<Token> &tokens) {
             std::cerr << "No mapping found for token " << TOKEN_TYPE_STR[token.type] << std::endl;
             return false;
         }
-        if (Grammar::RULES.find(currToken.type) != Grammar::RULES.end()) {
+        if (RULES.find(currToken.type) != RULES.end()) {
             currToken = token;
         } else {
             std::cerr << "No rule found from " << TOKEN_TYPE_STR[currToken.type] << " to " << TOKEN_TYPE_STR[token.type]
@@ -34,9 +34,12 @@ bool Grammar::parse(const std::vector<Token> &tokens) {
 
 JsonParser::JsonParser(const std::string &file_path) : file_path{file_path}, eof{false} {
 
-    this->parse();
+    if (!this->parse()) {
+        throw std::string("File" + file_path + " is invalid");
+    }
 }
-bool JsonParser::is_eof(){
+
+bool JsonParser::is_eof() {
     return this->eof;
 }
 
@@ -53,9 +56,9 @@ static bool is_letter(char c) {
     return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
 }
 
-char JsonParser::read_next(){
+char JsonParser::read_next() {
     this->file.read(buf, 1);
-    if(this->file.eof()){
+    if (this->file.eof()) {
         this->eof = true;
         return 0;
     }
@@ -74,14 +77,17 @@ bool JsonParser::parse() {
     while (!is_eof()) {
         switch (c) {
             case '{':
-                tokens.emplace_back(TokenType::START_OBJECT)
+                tokens.emplace_back(TokenType::START_OBJECT);
                 break;
             case '}':
-                last_token = Token(TokenType::END_OBJECT);
+                tokens.emplace_back(TokenType::END_OBJECT);
+                break;
+            case ',':
+                tokens.emplace_back(TokenType::COMMA);
                 break;
             case ' ':
-                last_token = Token(TokenType::WHITESPACE);
-                while(c == ' ' && !is_eof()) {
+                tokens.emplace_back(TokenType::WHITESPACE);
+                while (c == ' ' && !is_eof()) {
                     c = read_next();
                 }
                 continue;
@@ -96,17 +102,13 @@ bool JsonParser::parse() {
                     std::cerr << "Found invalid string " << std::endl;
                     return false;
                 } else {
-                    last_token = StringToken(std::string(letters.begin(), letters.end()));
+                    tokens.emplace_back(StringToken(std::string(letters.begin(), letters.end())));
                 }
                 break;
         }
         c = read_next();
-        if(!eof) {
-            tokens.push_back(last_token);
-        }
     }
-    Grammar::parse(tokens);
-    return true;
+    return Grammar::parse(tokens);
 }
 
 bool JsonParser::is_valid() {

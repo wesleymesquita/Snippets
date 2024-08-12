@@ -15,6 +15,7 @@ enum class TokenType {
     END_OBJECT,
     WHITESPACE,
     STRING,
+    COMMA,
     NONE
 };
 
@@ -25,6 +26,7 @@ static inline std::map<TokenType, std::string> TOKEN_TYPE_STR =
                 {TokenType::WHITESPACE,   "WHITESPACE"},
                 {TokenType::STRING,       "STRING"},
                 {TokenType::NONE,         "NONE"},
+                {TokenType::COMMA,         "COMMA"},
         };
 
 class Token {
@@ -48,7 +50,8 @@ public:
     static inline std::map<TokenType, std::set<TokenType>> RULES =
             {
                     {TokenType::NONE,         {TokenType::WHITESPACE, TokenType::START_OBJECT}},
-                    {TokenType::START_OBJECT, {TokenType::WHITESPACE, TokenType::END_OBJECT}}
+                    {TokenType::START_OBJECT, {TokenType::WHITESPACE, TokenType::END_OBJECT}},
+                    {TokenType::END_OBJECT, {TokenType::WHITESPACE, TokenType::COMMA}}
             };
 
     static bool parse(const std::vector<Token> &tokens);
