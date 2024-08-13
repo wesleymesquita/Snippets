@@ -16,7 +16,8 @@ enum class TokenType {
     WHITESPACE,
     STRING,
     COMMA,
-    NONE
+    NONE,
+    INVALID
 };
 
 static inline std::map<TokenType, std::string> TOKEN_TYPE_STR =
@@ -26,21 +27,21 @@ static inline std::map<TokenType, std::string> TOKEN_TYPE_STR =
                 {TokenType::WHITESPACE,   "WHITESPACE"},
                 {TokenType::STRING,       "STRING"},
                 {TokenType::NONE,         "NONE"},
-                {TokenType::COMMA,         "COMMA"},
+                {TokenType::COMMA,        "COMMA"},
+                {TokenType::INVALID,      "INVALID"},
         };
 
 class Token {
 public:
-    Token(TokenType type);
-
-    Token();
+    Token(TokenType type, size_t postion);
 
     TokenType type;
+    size_t position;
 };
 
 class StringToken : public Token {
 public:
-    StringToken(const std::string &&val);
+    StringToken(const std::string &&val, size_t position);
 
     std::string value;
 };
@@ -49,9 +50,10 @@ class Grammar {
 public:
     static inline std::map<TokenType, std::set<TokenType>> RULES =
             {
-                    {TokenType::NONE,         {TokenType::WHITESPACE, TokenType::START_OBJECT}},
-                    {TokenType::START_OBJECT, {TokenType::WHITESPACE, TokenType::END_OBJECT}},
-                    {TokenType::END_OBJECT, {TokenType::WHITESPACE, TokenType::COMMA}}
+                    {TokenType::NONE, {TokenType::START_OBJECT}},
+                    {TokenType::START_OBJECT, {TokenType::END_OBJECT}},
+                    {TokenType::END_OBJECT, {TokenType::COMMA}},
+                    {TokenType::COMMA, {TokenType::START_OBJECT}}
             };
 
     static bool parse(const std::vector<Token> &tokens);
@@ -69,14 +71,17 @@ public:
     JsonParser(const std::string &file_path);
 
     bool is_valid();
-    char read_next();
+
+    size_t read_next(char &c);
+
     bool is_eof();
+
 private:
     std::ifstream file;
     std::string file_path;
     char buf[1];
     bool eof;
-
+    size_t position;
     bool valid;
 
     bool parse();

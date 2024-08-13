@@ -5,23 +5,21 @@
 #include <string>
 #include <iostream>
 
-int main(int argc, char** argv){
+int main(int argc, char **argv) {
 
     std::string file_name;
 
-    if(argc == 2) {
+    if (argc == 2) {
         file_name = std::string{argv[1]};
-    }else{
+    } else {
         file_name = std::string{"/dev/stdin"};
     }
-    try {
-        JsonParser parser(file_name);
-        if(!parser.is_valid()){
-            return 1;
-        }
-    }catch(const std::string& error){
-        std::cerr << "Exception: " << error << std::endl;
+
+    JsonParser parser(file_name);
+    if (!parser.is_valid()) {
+        std::cerr << "Json file is invalid" << std::endl;
         return 1;
     }
+    std::cerr << "Json file is valid" << std::endl;
     return 0;
 }
