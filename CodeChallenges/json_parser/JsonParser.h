@@ -16,6 +16,7 @@ enum class TokenType {
     WHITESPACE,
     STRING,
     COMMA,
+    COLON,
     NONE,
     INVALID
 };
@@ -28,6 +29,7 @@ static inline std::map<TokenType, std::string> TOKEN_TYPE_STR =
                 {TokenType::STRING,       "STRING"},
                 {TokenType::NONE,         "NONE"},
                 {TokenType::COMMA,        "COMMA"},
+                {TokenType::COLON,        "COLON"},
                 {TokenType::INVALID,      "INVALID"},
         };
 
@@ -50,10 +52,13 @@ class Grammar {
 public:
     static inline std::map<TokenType, std::set<TokenType>> RULES =
             {
-                    {TokenType::NONE, {TokenType::START_OBJECT}},
-                    {TokenType::START_OBJECT, {TokenType::END_OBJECT}},
-                    {TokenType::END_OBJECT, {TokenType::COMMA}},
-                    {TokenType::COMMA, {TokenType::START_OBJECT}}
+                    {TokenType::NONE,         {TokenType::START_OBJECT}},
+                    {TokenType::START_OBJECT, {TokenType::STRING, TokenType::END_OBJECT}},
+                    {TokenType::STRING,       {TokenType::COLON,  TokenType::END_OBJECT}},
+                    {TokenType::END_OBJECT,   {TokenType::COMMA}},
+                    {TokenType::COMMA,        {TokenType::START_OBJECT}},
+                    {TokenType::COLON,        {TokenType::STRING}}
+
             };
 
     static bool parse(const std::vector<Token> &tokens);

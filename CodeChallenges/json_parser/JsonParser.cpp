@@ -97,6 +97,9 @@ bool JsonParser::parse() {
             case ',':
                 tokens.emplace_back(Token{TokenType::COMMA, position});
                 break;
+            case ':':
+                tokens.emplace_back(Token{TokenType::COLON, position});
+                break;
             case ' ':
                 tokens.emplace_back(Token{TokenType::WHITESPACE, position});
                 while (c == ' ' && !is_eof()) {
