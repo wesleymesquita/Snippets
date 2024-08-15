@@ -12,6 +12,9 @@ StringToken::StringToken(const std::string &&val, size_t position) :
         value{val} {}
 
 bool Grammar::parse(const std::vector<Token> &tokens) {
+    if(tokens.size() == 0){
+        return false;
+    }
     Token currToken{TokenType::NONE, 0};
     for (const Token &token: tokens) {
 
