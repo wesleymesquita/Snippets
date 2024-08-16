@@ -20,6 +20,15 @@ enum class TokenType {
     NONE,
     INVALID
 };
+enum class ValueType {
+    STRING,
+    NUMBER,
+    OBJECT,
+    ARRAY,
+    TRUE,
+    FALSE,
+    NULL
+};
 
 static inline std::map<TokenType, std::string> TOKEN_TYPE_STR =
         {
@@ -35,8 +44,7 @@ static inline std::map<TokenType, std::string> TOKEN_TYPE_STR =
 
 class Token {
 public:
-    Token(TokenType type, size_t postion);
-
+    Token(TokenType type, size_t position);
     TokenType type;
     size_t position;
 };
@@ -44,8 +52,12 @@ public:
 class StringToken : public Token {
 public:
     StringToken(const std::string &&val, size_t position);
-
     std::string value;
+};
+
+class ValueToken : public Token {
+public:
+ValueType valueType;
 };
 
 class Grammar {

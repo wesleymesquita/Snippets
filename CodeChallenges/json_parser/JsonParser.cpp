@@ -117,13 +117,27 @@ bool JsonParser::parse() {
                     position = read_next(c);
                 }
                 if (c != '"') {
-                    std::cerr << "Found invalid string " << std::endl;
+                    std::cerr << "Error: Found invalid string at position " << position << std::endl;
                     return false;
                 } else {
                     tokens.emplace_back(StringToken(std::string(letters.begin(), letters.end()), position));
                 }
                 break;
             }
+            case '[':
+                position = read_next(c);
+
+                while(c != ']' || is_digit(c) || !is_eof() ){
+                    read_value
+                    position = read_next(c);
+
+                }
+
+                if(c != ']') {
+                    std::cerr << "Error: Expected end of array at position " << position << std::endl;
+                    return false;
+                }
+            break;
             default:
                 tokens.emplace_back(Token{TokenType::INVALID, position});
         }
