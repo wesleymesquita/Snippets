@@ -10,7 +10,7 @@
 #include "JsonParser.h"
 
 TEST(JsonParserTest, BasicAssertions) {
-    bool test_specific{false};
+    bool test_specific{true};
 
     const std::string prefix{"../tests/"};
     std::map<int, bool> expected{
@@ -18,11 +18,13 @@ TEST(JsonParserTest, BasicAssertions) {
             {2, false},
             {3, false},
             {4, true},
-            {5, true}
+            {5, true},
+            {6, true},
+            {7, true}
     };
 
     std::map<int, bool> expected_specific{
-            {1, true},
+            {7, true},
     };
 
     if(test_specific) {
