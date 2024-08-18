@@ -79,6 +79,18 @@ char JsonParser::get_current(){
     return buf[0];
 }
 
+static bool is_letter(char c) {
+    return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
+}
+
+static bool is_digit(char c) {
+    return (c >= '0' && c <= '9');
+}
+
+static bool is_whitespace(char c) {
+    return (c == ' ' || c == '\n' || c == '\r' || c == '\t');
+}
+
 bool JsonParser::parse() {
     bool is_open = this->open();
     if (!is_open) {
@@ -102,7 +114,7 @@ bool JsonParser::parse() {
                 break;
             case ' ':
                 tokens.emplace_back(new Token{TokenType::WHITESPACE, position});
-                while (c == ' ' && !is_eof()) {
+                while (is_whitespace(c) && !is_eof()) {
                     c = read_next();
                 }
                 continue;
@@ -154,6 +166,7 @@ bool JsonParser::parse() {
             case '7':
             case '8':
             case '9':
+            case '-':
                 if(parse_number()) {
                     std::string s{temp_bytes.begin(), temp_bytes.end()};
                     tokens.emplace_back(new NumberToken {std::move(s), position});
@@ -185,23 +198,51 @@ bool JsonParser::parse_sequence(bool (*char_checker)(char c), const std::string&
     }
 
     return true;
-
 }
 
-static bool is_letter(char c) {
-    return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
-}
-
-static bool is_digit(char c) {
-    return (c >= '0' && c <= '9');
-}
 
 bool JsonParser::parse_string() {
     return parse_sequence(is_letter, STR);
 }
 
 bool JsonParser::parse_number() {
-    return parse_sequence(is_digit, NUMBER);
+    temp_bytes.clear();
+    char c{get_current()};
+
+    if(c == '-'){
+        temp_bytes.push_back(c);
+        c = read_next();
+        if(is_eof()){
+            std::cerr << "Expected digit at position " << this->position << std::endl;
+            return false;
+        }
+    }
+    bool first{true};
+
+    while(is_digit(c) || (!first && c == 'e') || (!first && c == 'E') ){
+        temp_bytes.push_back(c);
+        if(c == 'e' || c == 'E') {
+            c = read_next();
+            if(c != '+' && c != '-'){
+                std::cerr << "Expected '+' or '-' on position " << this->position  << std::endl;
+                return false;
+            }else{
+                temp_bytes.push_back(c);
+            }
+            c = read_next();
+            if(is_eof()){
+                std::cerr << "Expected digit at position " << this->position << std::endl;
+                return false;
+            }
+        }else{
+            c = read_next();
+        }
+        first = false;
+    }
+    if(temp_bytes.empty()){
+        return false;
+    }
+    return true;
 }
 
 bool JsonParser::parse_fixed(const std::vector<char>& fixed_val) {

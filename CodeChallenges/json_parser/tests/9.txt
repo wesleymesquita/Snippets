@@ -1,0 +1,2 @@
+{"val_str":"string", "val_false" : false, "val_true" :     true, "val_array_int" : [1,2,3,4],
+"val_array_str" : ["abc", "aaaa"], "val_obj" : {"inner_obj_val" : 1234 }, "val_array_obj" : [{"val_array": null}] }
