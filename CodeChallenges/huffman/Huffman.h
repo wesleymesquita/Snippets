@@ -33,7 +33,7 @@ private:
 
         TreeNode(TreeNode *left, TreeNode *right);
 
-        bool operator<(TreeNode &other) const;
+        bool operator<(TreeNode *other) const;
 
         char data;
         size_t freq;
@@ -50,10 +50,6 @@ private:
     bool _build_frequency_table(const std::string &content);
 
     bool _build_tree();
-
-    bool _compress_to_buffer();
-
-    bool _decompress_to_buffer();
 };
 
 

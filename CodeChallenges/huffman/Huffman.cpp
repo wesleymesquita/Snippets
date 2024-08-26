@@ -58,6 +58,24 @@ bool Huffman::compress(const std::string &from_file_path, const std::string &to_
         return false;
     }
 
+    if (!_build_tree()) {
+        return false;
+    }
+
+    fin.clear();
+    fin.seekg(0);
+
+    std::streamsize rd_size = fin.readsome(buf, BUF_SIZE);
+    std::vector<bool> output;
+    while (rd_size > 0) {
+        for (std::streamsize i = 0; i < rd_size; i++) {
+            char c = buf[i];
+            std::vector<bool> &path = huff_map[c];
+            output.insert(output.end(), path.begin(), path.end());
+        }
+        rd_size = fin.readsome(buf, BUF_SIZE);
+    }
+
     return true;
 }
 
@@ -96,12 +114,12 @@ bool Huffman::_build_frequency_table(std::ifstream &file) {
         return false;
     }
     this->frequency_table.clear();
-    std::streamsize sz = file.readsome(buf, 128);
+    std::streamsize sz = file.readsome(buf, BUF_SIZE);
     while (sz > 0) {
         for (int i = 0; i < sz; i++) {
             add_to_table(this->frequency_table, buf[i]);
         }
-        sz = file.readsome(buf, 128);
+        sz = file.readsome(buf, BUF_SIZE);
     }
 
     if (this->frequency_table.empty()) {
@@ -111,8 +129,8 @@ bool Huffman::_build_frequency_table(std::ifstream &file) {
     return true;
 }
 
-Huffman::TreeNode::TreeNode(char datum, size_t freq) : freq{freq}, is_leaf{true}, left{nullptr}, right{nullptr} {
-    data.insert(datum);
+Huffman::TreeNode::TreeNode(char datum, size_t freq) : data{datum}, freq{freq}, is_leaf{true}, left{nullptr},
+                                                       right{nullptr} {
 }
 
 
@@ -122,8 +140,8 @@ Huffman::TreeNode::TreeNode(TreeNode *left, TreeNode *right) : data{128}, is_lea
     this->right = right;
 }
 
-bool Huffman::TreeNode::operator<(Huffman::TreeNode &other) const {
-    return this->freq < other.freq;
+bool Huffman::TreeNode::operator<(Huffman::TreeNode *other) const {
+    return this->freq < other->freq;
 }
 
 bool Huffman::_build_tree() {
@@ -131,7 +149,8 @@ bool Huffman::_build_tree() {
         return false;
     }
 
-    std::priority_queue<TreeNode *> pq;
+    std::priority_queue<TreeNode *, std::vector<TreeNode *>,
+            decltype([](TreeNode *left, TreeNode *right) { return left->freq > right->freq; })> pq;
 
     for (auto &pair: this->frequency_table) {
         pq.push(new Huffman::TreeNode(pair.first, pair.second));
@@ -164,7 +183,7 @@ bool Huffman::_build_tree() {
             }
         }
         if (root->right != nullptr) {
-            path.push_back(false);
+            path.push_back(true);
             if (root->right->is_leaf) {
                 huff_map[root->right->data] = path;
                 path.erase(path.end());
@@ -176,3 +195,5 @@ bool Huffman::_build_tree() {
 
     return true;
 }
+
+
