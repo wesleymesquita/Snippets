@@ -41,15 +41,21 @@ private:
         TreeNode *right, *left;
     } TreeNode;
 
+
     char *buf;
-    std::map<char, int> frequency_table;
+    std::map<char, size_t> frequency_table;
     std::map<char, std::vector<bool>> huff_map;
+    TreeNode *tree_root;
 
     bool _build_frequency_table(std::ifstream &file);
 
     bool _build_frequency_table(const std::string &content);
 
     bool _build_tree();
+
+    bool _dump_frequency_table(std::ofstream &fout);
+
+    bool _load_frequency_table(std::ifstream &fout);
 };
 
 

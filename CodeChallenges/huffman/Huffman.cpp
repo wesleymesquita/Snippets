@@ -7,6 +7,9 @@
 #include <queue>
 #include <memory>
 #include <stack>
+#include <bitset>
+
+#include <iostream>
 
 #include "Huffman.h"
 
@@ -18,6 +21,15 @@ std::string Huffman::compress_str(const std::string &content) {
     if (!this->_build_frequency_table(content)) {
         return "";
     }
+
+    if (!_build_frequency_table(content)) {
+        return "";
+    }
+
+    if (!_build_tree()) {
+        return "";
+    }
+
     return "";
 }
 
@@ -33,8 +45,8 @@ size_t Huffman::get_frequency(char c) {
     return this->frequency_table[c];
 }
 
-static bool open_files(const std::string &from_file_path, std::ifstream &fin, const std::string &to_file_path,
-                       std::ofstream &fout) {
+static bool open_files(const std::string &from_file_path, std::ifstream &fin,
+                       const std::string &to_file_path, std::ofstream &fout) {
     fin.open(from_file_path);
     if (!fin.is_open()) {
         return false;
@@ -48,9 +60,14 @@ static bool open_files(const std::string &from_file_path, std::ifstream &fin, co
 }
 
 bool Huffman::compress(const std::string &from_file_path, const std::string &to_file_path) {
-    std::ifstream fin;
-    std::ofstream fout;
-    if (!open_files(from_file_path, fin, to_file_path, fout)) {
+    std::ifstream fin{from_file_path};
+    std::ofstream fout{to_file_path, std::fstream::binary};
+
+    if (!fin.is_open()) {
+        return false;
+    }
+
+    if (!fout.is_open()) {
         return false;
     }
 
@@ -62,6 +79,7 @@ bool Huffman::compress(const std::string &from_file_path, const std::string &to_
         return false;
     }
 
+    // get back to beg of file and read each character
     fin.clear();
     fin.seekg(0);
 
@@ -76,21 +94,92 @@ bool Huffman::compress(const std::string &from_file_path, const std::string &to_
         rd_size = fin.readsome(buf, BUF_SIZE);
     }
 
+    _dump_frequency_table(fout);
+
+    constexpr size_t BIT_BUFFER_SIZE{sizeof(unsigned long long) * 8};
+    std::bitset<BIT_BUFFER_SIZE> bit_buffer;
+
+    size_t bit_stream_sz = output.size() < BIT_BUFFER_SIZE ? output.size() : BIT_BUFFER_SIZE;
+    size_t bit_buf_idx{0};
+
+    fout.write(reinterpret_cast<char *>(&bit_stream_sz), sizeof(size_t));
+    bit_buffer.reset();
+    for (size_t i = 0; i < bit_stream_sz; i++) {
+        if (bit_buf_idx < BIT_BUFFER_SIZE) {
+            bit_buffer.set(bit_buf_idx++, output[i]);
+        } else {
+            std::cout << "Compressing  " << bit_buffer.to_string<char>() << std::endl;
+            unsigned long long v = bit_buffer.to_ullong();
+            fout.write(reinterpret_cast<char *>(&v), sizeof(unsigned long long));
+            bit_buffer.reset();
+            bit_buf_idx = 0;
+        }
+    }
+
+    if(bit_buf_idx > 0) {
+        unsigned long long v = bit_buffer.to_ullong();
+        std::cout << "Compressing  " << bit_buffer.to_string<char>() << std::endl;
+        fout.write(reinterpret_cast<char *>(&v), sizeof(unsigned long long));
+    }
+
+    fout.close();
     return true;
 }
 
 bool Huffman::decompress(const std::string &from_file_path, const std::string &to_file_path) {
 
-    std::ifstream fin;
-    std::ofstream fout;
-    if (!open_files(from_file_path, fin, to_file_path, fout)) {
+    std::ifstream fin{from_file_path, std::fstream::binary};
+    std::ofstream fout{to_file_path};
+
+    if (!fin.is_open()) {
         return false;
+    }
+
+    if (!fout.is_open()) {
+        return false;
+    }
+
+    if (!_load_frequency_table(fin)) {
+        return false;
+    }
+
+    this->huff_map.clear();
+
+    _build_tree();
+
+    unsigned long long path;
+    constexpr size_t BIT_BUFFER_SIZE{sizeof(unsigned long long) * 8};
+    TreeNode *curr{this->tree_root};
+
+    size_t bit_stream_sz;
+    fin.read(reinterpret_cast<char*>(&bit_stream_sz), sizeof(size_t));
+    size_t bit_i{0};
+
+    while (bit_i < bit_stream_sz) {
+
+        fin.read(reinterpret_cast<char *>(&path), sizeof(unsigned long long));
+        std::bitset<BIT_BUFFER_SIZE> bit_buffer(path);
+        std::cout << "Decompressing " << bit_buffer.to_string<char>() << std::endl;
+
+        size_t bit_buffer_i {0};
+        while (bit_i < bit_stream_sz && bit_buffer_i < BIT_BUFFER_SIZE) {
+            if (curr->is_leaf) {
+                fout << curr->data;
+                curr = this->tree_root;
+            } else if (bit_buffer[bit_buffer_i]) {
+                curr = curr->right;
+            } else {
+                curr = curr->left;
+            }
+            bit_buffer_i++;
+            bit_i++;
+        }
     }
 
     return true;
 }
 
-static void add_to_table(std::map<char, int> &table, char c) {
+static void add_to_table(std::map<char, size_t> &table, char c) {
     if (table.find(c) == table.end()) {
         table[c] = 1;
     } else {
@@ -193,7 +282,50 @@ bool Huffman::_build_tree() {
         }
     }
 
+    this->tree_root = pq.top();
+    pq.pop();
+
     return true;
 }
 
+bool Huffman::_dump_frequency_table(std::ofstream &fout) {
+    if (this->frequency_table.empty()) {
+        return false;
+    }
+    size_t table_size{this->frequency_table.size()};
+    fout.write(reinterpret_cast<char *>(&table_size), sizeof(size_t));
 
+    for (auto &pair: this->frequency_table) {
+        fout.write(reinterpret_cast<const char *>(&pair.first), sizeof(char));
+        fout.write(reinterpret_cast<char *>(&pair.second), sizeof(size_t));
+    }
+
+    return true;
+}
+
+bool Huffman::_load_frequency_table(std::ifstream &fin) {
+    if (!fin.is_open()) {
+        return false;
+    }
+
+    if (!this->frequency_table.empty()) {
+        this->frequency_table.clear();
+    }
+
+    size_t table_size;
+    fin.read(reinterpret_cast<char *>(&table_size), sizeof(size_t));
+
+    if (table_size == 0) {
+        return false;
+    }
+
+    char c;
+    size_t freq;
+    for (int i = 0; i < table_size; i++) {
+        fin.read(reinterpret_cast<char *>(&c), sizeof(char));
+        fin.read(reinterpret_cast<char *>(&freq), sizeof(size_t));
+        this->frequency_table[c] = freq;
+    }
+
+    return true;
+}
