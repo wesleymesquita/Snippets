@@ -15,11 +15,9 @@ class Huffman {
 public:
     Huffman();
 
+    ~Huffman();
+
     size_t get_frequency(char c);
-
-    std::string compress_str(const std::string &content);
-
-    std::string decompress_str(const std::string &content);
 
     bool compress(const std::string &from_file_path, const std::string &to_file_path);
 
@@ -52,6 +50,8 @@ private:
     bool _build_frequency_table(const std::string &content);
 
     bool _build_tree();
+
+    bool _visit_tree(Huffman::TreeNode* root, std::vector<bool> &path, std::map<char, std::vector<bool>> &huff_map);
 
     bool _dump_frequency_table(std::ofstream &fout);
 

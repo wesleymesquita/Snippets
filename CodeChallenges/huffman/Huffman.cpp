@@ -5,7 +5,6 @@
 #include <string>
 #include <fstream>
 #include <queue>
-#include <memory>
 #include <stack>
 #include <bitset>
 
@@ -13,29 +12,27 @@
 
 #include "Huffman.h"
 
-Huffman::Huffman() : buf{new char[BUF_SIZE]} {
+Huffman::Huffman() : buf{new char[BUF_SIZE]}, tree_root{nullptr} {}
 
-}
-
-std::string Huffman::compress_str(const std::string &content) {
-    if (!this->_build_frequency_table(content)) {
-        return "";
+Huffman::~Huffman() {
+    if (this->tree_root != nullptr) {
+        std::stack<TreeNode *> nodes;
+        nodes.push(this->tree_root);
+        TreeNode *curr{nullptr};
+        while (!nodes.empty()) {
+            curr = nodes.top();
+            nodes.pop();
+            if(curr->right != nullptr){
+                nodes.push(curr->right);
+            }
+            if(curr->left != nullptr){
+                nodes.push(curr->left);
+            }
+            delete curr;
+        }
     }
 
-    if (!_build_frequency_table(content)) {
-        return "";
-    }
-
-    if (!_build_tree()) {
-        return "";
-    }
-
-    return "";
-}
-
-std::string Huffman::decompress_str(const std::string &content) {
-    this->_build_frequency_table(content);
-    return "";
+    delete [] buf;
 }
 
 size_t Huffman::get_frequency(char c) {
@@ -45,41 +42,32 @@ size_t Huffman::get_frequency(char c) {
     return this->frequency_table[c];
 }
 
-static bool open_files(const std::string &from_file_path, std::ifstream &fin,
-                       const std::string &to_file_path, std::ofstream &fout) {
-    fin.open(from_file_path);
-    if (!fin.is_open()) {
-        return false;
-    }
-    fout.open(to_file_path, std::fstream::out);
-    if (!fout.is_open()) {
-        return false;
-    }
-
-    return true;
-}
-
 bool Huffman::compress(const std::string &from_file_path, const std::string &to_file_path) {
     std::ifstream fin{from_file_path};
     std::ofstream fout{to_file_path, std::fstream::binary};
 
     if (!fin.is_open()) {
+        std::cerr << "COMPRESS: Could not open file " << from_file_path << " for reading " << std::endl;
         return false;
     }
 
     if (!fout.is_open()) {
+        std::cerr << "COMPRESS: Could not open file " << to_file_path << " for writing " << std::endl;
         return false;
     }
 
     if (!_build_frequency_table(fin)) {
+        std::cerr << "COMPRESS: Could not build frequency table " << std::endl;
         return false;
     }
 
     if (!_build_tree()) {
+        std::cerr << "COMPRESS: Could not build huffman tree " << std::endl;
         return false;
     }
 
     // get back to beg of file and read each character
+    // for compression process
     fin.clear();
     fin.seekg(0);
 
@@ -94,21 +82,24 @@ bool Huffman::compress(const std::string &from_file_path, const std::string &to_
         rd_size = fin.readsome(buf, BUF_SIZE);
     }
 
-    _dump_frequency_table(fout);
+    if(!_dump_frequency_table(fout)) {
+        std::cerr << "COMPRESS: Could not write frequency table to compressed file" << std::endl;
+        return false;
+    }
 
-    constexpr size_t BIT_BUFFER_SIZE{sizeof(unsigned long long) * 8};
+    constexpr size_t BIT_BUFFER_SIZE{sizeof(signed long long) * 8};
+
+    size_t bit_stream_sz = output.size();
+    fout.write(reinterpret_cast<char *>(&bit_stream_sz), sizeof(size_t));
+
     std::bitset<BIT_BUFFER_SIZE> bit_buffer;
-
-    size_t bit_stream_sz = output.size() < BIT_BUFFER_SIZE ? output.size() : BIT_BUFFER_SIZE;
+    bit_buffer.reset();
     size_t bit_buf_idx{0};
 
-    fout.write(reinterpret_cast<char *>(&bit_stream_sz), sizeof(size_t));
-    bit_buffer.reset();
     for (size_t i = 0; i < bit_stream_sz; i++) {
         if (bit_buf_idx < BIT_BUFFER_SIZE) {
             bit_buffer.set(bit_buf_idx++, output[i]);
         } else {
-            std::cout << "Compressing  " << bit_buffer.to_string<char>() << std::endl;
             unsigned long long v = bit_buffer.to_ullong();
             fout.write(reinterpret_cast<char *>(&v), sizeof(unsigned long long));
             bit_buffer.reset();
@@ -116,9 +107,8 @@ bool Huffman::compress(const std::string &from_file_path, const std::string &to_
         }
     }
 
-    if(bit_buf_idx > 0) {
+    if (bit_buf_idx > 0) {
         unsigned long long v = bit_buffer.to_ullong();
-        std::cout << "Compressing  " << bit_buffer.to_string<char>() << std::endl;
         fout.write(reinterpret_cast<char *>(&v), sizeof(unsigned long long));
     }
 
@@ -132,14 +122,17 @@ bool Huffman::decompress(const std::string &from_file_path, const std::string &t
     std::ofstream fout{to_file_path};
 
     if (!fin.is_open()) {
+        std::cerr << "DECOMPRESS: Could not open file " << from_file_path << " for reading " << std::endl;
         return false;
     }
 
     if (!fout.is_open()) {
+        std::cerr << "DECOMPRESS: Could not open file " << to_file_path << " for writing" << std::endl;
         return false;
     }
 
     if (!_load_frequency_table(fin)) {
+        std::cerr << "DECOMPRESS: Could not load frequency table for decompressing " << std::endl;
         return false;
     }
 
@@ -147,33 +140,40 @@ bool Huffman::decompress(const std::string &from_file_path, const std::string &t
 
     _build_tree();
 
-    unsigned long long path;
     constexpr size_t BIT_BUFFER_SIZE{sizeof(unsigned long long) * 8};
     TreeNode *curr{this->tree_root};
 
     size_t bit_stream_sz;
-    fin.read(reinterpret_cast<char*>(&bit_stream_sz), sizeof(size_t));
+    fin.read(reinterpret_cast<char *>(&bit_stream_sz), sizeof(size_t));
     size_t bit_i{0};
 
-    while (bit_i < bit_stream_sz) {
+    unsigned long long path;
+    fin.read(reinterpret_cast<char *>(&path), sizeof(unsigned long long));
+    std::bitset<BIT_BUFFER_SIZE> bit_buffer(path);
+    size_t bit_buffer_i{0};
 
-        fin.read(reinterpret_cast<char *>(&path), sizeof(unsigned long long));
-        std::bitset<BIT_BUFFER_SIZE> bit_buffer(path);
-        std::cout << "Decompressing " << bit_buffer.to_string<char>() << std::endl;
+    while (bit_i <= bit_stream_sz) {
 
-        size_t bit_buffer_i {0};
-        while (bit_i < bit_stream_sz && bit_buffer_i < BIT_BUFFER_SIZE) {
-            if (curr->is_leaf) {
-                fout << curr->data;
-                curr = this->tree_root;
-            } else if (bit_buffer[bit_buffer_i]) {
-                curr = curr->right;
-            } else {
-                curr = curr->left;
-            }
-            bit_buffer_i++;
-            bit_i++;
+        if (curr->is_leaf) {
+            fout << curr->data;
+            curr = this->tree_root;
         }
+
+        if (bit_buffer.test(bit_buffer_i)) {
+            curr = curr->right;
+        } else {
+            curr = curr->left;
+        }
+
+        if (bit_buffer_i == BIT_BUFFER_SIZE - 1) {
+            fin.read(reinterpret_cast<char *>(&path), sizeof(unsigned long long));
+            bit_buffer = std::bitset<BIT_BUFFER_SIZE>(path);
+            bit_buffer_i = 0;
+        } else {
+            bit_buffer_i++;
+        }
+
+        bit_i++;
     }
 
     return true;
@@ -233,6 +233,28 @@ bool Huffman::TreeNode::operator<(Huffman::TreeNode *other) const {
     return this->freq < other->freq;
 }
 
+bool Huffman::_visit_tree(TreeNode* root, std::vector<bool> &path, std::map<char, std::vector<bool>> &huff_map) {
+
+    if(root != nullptr) {
+        if(root->is_leaf) {
+            huff_map[root->data] = path;
+        }
+
+        if(root->right != nullptr) {
+            path.push_back(true);
+            _visit_tree(root->right, path, huff_map);
+        }
+
+        if(root->left != nullptr){
+            path.push_back(false);
+            _visit_tree(root->left, path, huff_map);
+        }
+        path.erase(path.end());
+    }
+
+    return true;
+}
+
 bool Huffman::_build_tree() {
     if (this->frequency_table.empty()) {
         return false;
@@ -253,37 +275,13 @@ bool Huffman::_build_tree() {
         pq.push(new TreeNode{left, right});
     }
 
-    std::stack<TreeNode *> visit;
-    std::vector<bool> path;
-
-    visit.push(pq.top());
-
-    huff_map.clear();
-    while (!visit.empty()) {
-        TreeNode *root = visit.top();
-        visit.pop();
-        if (root->left != nullptr) {
-            path.push_back(false);
-            if (root->left->is_leaf) {
-                huff_map[root->left->data] = path;
-                path.erase(path.end());
-            } else {
-                visit.push(root->left);
-            }
-        }
-        if (root->right != nullptr) {
-            path.push_back(true);
-            if (root->right->is_leaf) {
-                huff_map[root->right->data] = path;
-                path.erase(path.end());
-            } else {
-                visit.push(root->right);
-            }
-        }
-    }
-
     this->tree_root = pq.top();
+
     pq.pop();
+
+    std::vector<bool> path;
+    huff_map.clear();
+    _visit_tree(this->tree_root, path, huff_map);
 
     return true;
 }
