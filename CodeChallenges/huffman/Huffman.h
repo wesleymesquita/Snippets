@@ -27,13 +27,13 @@ private:
     static const inline size_t BUF_SIZE{1024};
 
     typedef struct TreeNode {
-        TreeNode(char data, size_t freq);
+        TreeNode(unsigned char data, size_t freq);
 
         TreeNode(TreeNode *left, TreeNode *right);
 
         bool operator<(TreeNode *other) const;
 
-        char data;
+        unsigned char data;
         size_t freq;
         bool is_leaf;
         TreeNode *right, *left;
@@ -41,8 +41,8 @@ private:
 
 
     char *buf;
-    std::map<char, size_t> frequency_table;
-    std::map<char, std::vector<bool>> huff_map;
+    std::map<unsigned char, size_t> frequency_table;
+    std::map<unsigned char, std::vector<bool>> huff_map;
     TreeNode *tree_root;
 
     bool _build_frequency_table(std::ifstream &file);
@@ -51,7 +51,7 @@ private:
 
     bool _build_tree();
 
-    bool _visit_tree(Huffman::TreeNode* root, std::vector<bool> &path, std::map<char, std::vector<bool>> &huff_map);
+    bool _visit_tree(TreeNode* root, std::vector<bool> &path, std::map<unsigned char, std::vector<bool>> &huff_map);
 
     bool _dump_frequency_table(std::ofstream &fout);
 

@@ -75,7 +75,7 @@ bool Huffman::compress(const std::string &from_file_path, const std::string &to_
     std::vector<bool> output;
     while (rd_size > 0) {
         for (std::streamsize i = 0; i < rd_size; i++) {
-            char c = buf[i];
+            unsigned char c = buf[i];
             std::vector<bool> &path = huff_map[c];
             output.insert(output.end(), path.begin(), path.end());
         }
@@ -155,7 +155,7 @@ bool Huffman::decompress(const std::string &from_file_path, const std::string &t
     while (bit_i <= bit_stream_sz) {
 
         if (curr->is_leaf) {
-            fout << curr->data;
+            fout.write(reinterpret_cast<char*>(&curr->data), sizeof(unsigned char));
             curr = this->tree_root;
         }
 
@@ -165,7 +165,7 @@ bool Huffman::decompress(const std::string &from_file_path, const std::string &t
             curr = curr->left;
         }
 
-        if (bit_buffer_i == BIT_BUFFER_SIZE - 1) {
+        if (bit_buffer_i == BIT_BUFFER_SIZE-1) {
             fin.read(reinterpret_cast<char *>(&path), sizeof(unsigned long long));
             bit_buffer = std::bitset<BIT_BUFFER_SIZE>(path);
             bit_buffer_i = 0;
@@ -179,7 +179,7 @@ bool Huffman::decompress(const std::string &from_file_path, const std::string &t
     return true;
 }
 
-static void add_to_table(std::map<char, size_t> &table, char c) {
+static void add_to_table(std::map<unsigned char, size_t> &table, char c) {
     if (table.find(c) == table.end()) {
         table[c] = 1;
     } else {
@@ -218,7 +218,7 @@ bool Huffman::_build_frequency_table(std::ifstream &file) {
     return true;
 }
 
-Huffman::TreeNode::TreeNode(char datum, size_t freq) : data{datum}, freq{freq}, is_leaf{true}, left{nullptr},
+Huffman::TreeNode::TreeNode(unsigned char datum, size_t freq) : data{datum}, freq{freq}, is_leaf{true}, left{nullptr},
                                                        right{nullptr} {
 }
 
@@ -233,7 +233,7 @@ bool Huffman::TreeNode::operator<(Huffman::TreeNode *other) const {
     return this->freq < other->freq;
 }
 
-bool Huffman::_visit_tree(TreeNode* root, std::vector<bool> &path, std::map<char, std::vector<bool>> &huff_map) {
+bool Huffman::_visit_tree(TreeNode* root, std::vector<bool> &path, std::map<unsigned char, std::vector<bool>> &huff_map) {
 
     if(root != nullptr) {
         if(root->is_leaf) {
