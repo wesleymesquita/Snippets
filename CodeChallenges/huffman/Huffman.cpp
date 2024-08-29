@@ -97,14 +97,13 @@ bool Huffman::compress(const std::string &from_file_path, const std::string &to_
     size_t bit_buf_idx{0};
 
     for (size_t i = 0; i < bit_stream_sz; i++) {
-        if (bit_buf_idx < BIT_BUFFER_SIZE) {
-            bit_buffer.set(bit_buf_idx++, output[i]);
-        } else {
+        if (bit_buf_idx == BIT_BUFFER_SIZE) {
             unsigned long long v = bit_buffer.to_ullong();
             fout.write(reinterpret_cast<char *>(&v), sizeof(unsigned long long));
             bit_buffer.reset();
             bit_buf_idx = 0;
         }
+        bit_buffer.set(bit_buf_idx++, output[i]);
     }
 
     if (bit_buf_idx > 0) {
