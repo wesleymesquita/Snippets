@@ -3,9 +3,8 @@
 //
 
 #include <iostream>
-#include <fstream>
-#include <sstream>
 #include <random>
+#include <vector>
 
 #include <SDL.h>
 // for image, remember to sudo apt-get install libsdl2-image-dev
@@ -56,37 +55,43 @@ bool RandomWalk::init() {
     return true;
 }
 
+
 bool RandomWalk::start() {
     SDL_Event event;
-    int x1, y1, x2, y2;
-    size_t n_interactions{0};
-    x2 = _get_random_width();
-    y2 = _get_random_height();
+    SDL_Point *points;
+    int n_points = this->interactions;
+    int i_point = 0;
+    points = new SDL_Point[n_points];
 
+    size_t n_interactions{0};
+    points[i_point].x = _get_random_width();
+    points[i_point].y = _get_random_height();
+    i_point++;
 
     SDL_RenderClear(renderer);
     SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255);
+
     while (true) {
         if (SDL_PollEvent(&event)) {
-           if (event.type == SDL_KEYDOWN  && event.key.keysym.scancode == SDL_SCANCODE_UP) {
-                x1 = x2;
-                y1 = y2;
-                x2 = _get_random_width();
-                y2 = _get_random_height();
-                if(SDL_RenderDrawLine(renderer, x1, y1, x2, y2) == 0) {
-                    std::cout << "Drawing from (" << x1 << "," << y1 << ") to (" << x2 << "," << y2 << ")" << std::endl;
+            if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_UP) {
+                points[i_point].x = _get_random_width();
+                points[i_point].y = _get_random_height();
+                i_point++;
+
+                if (SDL_RenderDrawLines(renderer, points, i_point) == 0) {
+                    std::cout << "Presenting render " << std::endl;
+                    SDL_RenderPresent(renderer);
                     n_interactions++;
-                }else{
+                } else {
                     std::cerr << "Error to draw line " << SDL_GetError() << std::endl;
                 }
             }
-            if (n_interactions >= this->interactions) {
+            if (i_point >= this->interactions) {
                 break;
             }
-            std::cout << "Presenting render " << std::endl;
-            SDL_RenderPresent(renderer);
         }
     }
+    delete [] points;
     return true;
 }
 

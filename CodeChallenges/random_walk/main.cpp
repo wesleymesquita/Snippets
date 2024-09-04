@@ -3,7 +3,7 @@
 
 int main(int argc, char *argv[])
 {
-    RandomWalk rw(10);
+    RandomWalk rw(20);
     rw.init();
     rw.start();
     rw.destroy();
