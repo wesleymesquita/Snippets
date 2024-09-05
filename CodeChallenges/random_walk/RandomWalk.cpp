@@ -15,6 +15,8 @@ RandomWalk::RandomWalk(size_t iteractions) : interactions{iteractions} {
     mt = std::mt19937(rd());
     dist_width = std::uniform_int_distribution<int>(0, WIDTH);
     dist_height = std::uniform_int_distribution<int>(0, HEIGHT);
+    dist_square_width = std::uniform_int_distribution<int>(0, WIDTH/SQUARE_SIZE);
+    dist_square_height = std::uniform_int_distribution<int>(0, HEIGHT/SQUARE_SIZE);
 }
 
 
@@ -71,12 +73,19 @@ bool RandomWalk::start() {
     SDL_RenderClear(renderer);
     SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255);
 
+    SDL_Rect *rect = new SDL_Rect[this->interactions];
+    int i_rect{0};
     while (true) {
         if (SDL_PollEvent(&event)) {
             if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_UP) {
+                _draw_grid(20);
+
                 points[i_point].x = _get_random_width();
                 points[i_point].y = _get_random_height();
                 i_point++;
+
+                _get_random_square(&rect[i_rect++]);
+                SDL_RenderFillRects(renderer, rect, i_rect);
 
                 if (SDL_RenderDrawLines(renderer, points, i_point) == 0) {
                     std::cout << "Presenting render " << std::endl;
@@ -91,9 +100,31 @@ bool RandomWalk::start() {
             }
         }
     }
-    delete [] points;
+    delete[] points;
     return true;
 }
+
+bool RandomWalk::_draw_grid(int square_size) {
+    for (int x = 0; x <= WIDTH; x += square_size) {
+        SDL_RenderDrawLine(this->renderer, x, 0, x, HEIGHT);
+    }
+
+    for (int y = 0; y <= HEIGHT; y += square_size) {
+        SDL_RenderDrawLine(this->renderer, 0, y, WIDTH, y);
+    }
+
+    return true;
+}
+
+void RandomWalk::_paint_square(int x, int y, int square_size) {
+    SDL_Rect rect;
+    rect.x = x;
+    rect.y = y;
+    rect.h = square_size;
+    rect.h = square_size;
+    SDL_RenderFillRect(renderer, &rect);
+}
+
 
 bool RandomWalk::stop() {
     return true;
@@ -108,22 +139,17 @@ bool RandomWalk::destroy() {
     return true;
 }
 
-
-bool RandomWalk::_load_grid() {
-
-    //https://gamedev.stackexchange.com/questions/59078/sdl-function-for-loading-pngs
-    IMG_Init(IMG_INIT_PNG);
-    grid_texture = IMG_LoadTexture(renderer, "../images/grid.png");
-    SDL_RenderCopy(renderer, grid_texture, nullptr, nullptr);
-    SDL_RenderPresent(renderer);
-
-    return true;
-}
-
 int RandomWalk::_get_random_width() {
     return dist_width(mt);
 }
 
 int RandomWalk::_get_random_height() {
     return dist_height(mt);
+}
+
+void RandomWalk::_get_random_square(SDL_Rect *square) {
+    square->x = dist_square_width(mt) * SQUARE_SIZE;
+    square->y = dist_square_height(mt) * SQUARE_SIZE;
+    square->h = SQUARE_SIZE;
+    square->w = SQUARE_SIZE;
 }

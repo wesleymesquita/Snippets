@@ -22,8 +22,9 @@ public:
 
 private:
 
-    const int WIDTH{640};
-    const int HEIGHT{480};
+    static constexpr int WIDTH{640};
+    static const int HEIGHT{480};
+    static const int SQUARE_SIZE{20};
 
     size_t interactions;
 
@@ -35,9 +36,15 @@ private:
 
     std::random_device rd;
     std::mt19937 mt;
+
     std::uniform_int_distribution<int> dist_width;
     std::uniform_int_distribution<int> dist_height;
-    bool _load_grid();
+    std::uniform_int_distribution<int> dist_square_height;
+    std::uniform_int_distribution<int> dist_square_width;
+
+    bool _draw_grid(int square_size);
+    void _paint_square(int x, int y, int square_size);
+    void _get_random_square(SDL_Rect *square);
     int _get_random_width();
     int _get_random_height();
 };
