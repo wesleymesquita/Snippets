@@ -12,15 +12,19 @@
 
 class Option {
 public:
-    virtual bool exec(const std::string& line, std::string& result);
-    virtual bool set_args(const char* arg);
+    virtual bool exec(const std::string &line, std::string &result);
+
+    virtual bool set_args(const char *arg);
 };
 
 class Bytes : public Option {
 public:
     Bytes();
-    bool exec(const std::string& line, std::string& result) override;
-    bool set_args(const char* arg) override;
+
+    bool exec(const std::string &line, std::string &result) override;
+
+    bool set_args(const char *arg) override;
+
     int m, n; // interval from m(inclusive) to n(inclusive)
 };
 
@@ -110,9 +114,10 @@ private:
 
     static const inline std::string ERROR_INVALID_ARGUMENTS = {
             "cut: you must specify a list of bytes, characters, or fields"};
+    static const inline std::string NO_SUCH_FILE = { "No such file or directory"};
     static const inline std::string TRY_HELP = {"Try 'cut --help' for more information."};
 
-    std::ifstream input_file;
+    std::vector<std::ifstream> input_files;
 
     bool _exec(int argc, char *argv[]);
 

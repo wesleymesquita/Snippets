@@ -16,24 +16,28 @@ bool Cut::_exec(int argc, char **argv) {
     }
 
     std::vector<const Option *> options;
+    bool valid_state{true};
 
     for (int i = 1; i < argc; i++) {
-        const char *option = _parse_option(argv[i]);
-        if (strcmp(option, INVALID_OPTION) == 0) {
-            // last argument. Can be the file
-            if(i == argc -1) {
-
+        if (argv[i][0] == '-') {
+            const char *option = _parse_option(argv[i]);
+            if (strcmp(option, INVALID_OPTION) == 0) {
             }
-            return false;
+            Option op = OPTIONS.at(option);
+            op.set_args(argv[i]);
+            options.push_back(&op);
+        } else {
+            std::ifstream input_file(argv[i]);
+            if (!input_file.is_open()) {
+                std::cerr << "cut: " << argv[1] << ": " << NO_SUCH_FILE << std::endl;
+                valid_state = false;
+            } else {
+                this->input_files.emplace_back(std::move(input_file));
+            }
         }
-
-        Option op = OPTIONS.at(option);
-        op.set_args(argv[i]);
-        options.push_back(&op);
     }
 
-
-    return true;
+    return valid_state;
 }
 
 const char *Cut::_parse_option(const char *option) {
